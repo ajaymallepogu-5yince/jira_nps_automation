@@ -21,34 +21,37 @@ def run():
     sprints = get_sprints_ending_today()
 
     if not sprints:
-
         print("No sprint ended today")
-
         return
 
     for sprint in sprints:
 
         project = sprint["project_name"]
+        sprint_name = sprint["sprint_name"]
+
+        print(f"\nSprint ending today: [{project}] {sprint_name}")
+        print(f"  Total Issues    : {sprint['total_issues']}")
+        print(f"  Completed       : {sprint['completed_issues']}")
+        print(f"  Bugs Fixed      : {sprint['bugs_fixed']}")
+        print(f"  Story Points    : {sprint['story_points']}")
 
         client_email = clients.get(project)
 
         if not client_email:
-
-            print(f"No client email found for {project}")
-
+            print(f"  [SKIP] No client email found for project: '{project}'")
             continue
 
         summary = generate_summary(sprint)
 
         send_email(
             client_email,
-            f"Sprint Completed - {sprint['sprint_name']}",
+            f"Sprint Completed - {sprint_name}",
             summary
         )
 
         send_slack_message(summary)
 
-        print("Email and Slack notification sent")
+        print(f"  [DONE] Email sent to {client_email} | Slack notified")
 
 
 if __name__ == "__main__":
