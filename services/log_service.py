@@ -5,7 +5,7 @@ from config import DATABASE_URL
 
 
 def get_connection():
-    return psycopg2.connect(DATABASE_URL + "?sslmode=require")
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 
 def init_db():
