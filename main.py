@@ -43,34 +43,38 @@ def run():
             continue
 
         # ── Client lookup ────────────────────────────────────────
-        client_email = clients.get(project)
+        client_emails = clients.get(project)
 
-        if not client_email:
+        if not client_emails:
             print(f"  [SKIP] No client email found for project: '{project}'")
             continue
+
+        # Normalize — always work as a list
+        if isinstance(client_emails, str):
+            client_emails = [client_emails]
 
         # ── Send email ───────────────────────────────────────────
         summary = generate_summary(sprint)
 
         try:
             send_email(
-                client_email,
+                client_emails,
                 f"Sprint Completed - {sprint_name}",
                 summary
             )
             email_status = "sent"
-            print(f"  [EMAIL] Sent to {client_email} ✅")
+            print(f"  [EMAIL] Sent to {', '.join(client_emails)} ✅")
 
         except Exception as e:
             email_status = "failed"
             print(f"  [EMAIL] Failed → {e}")
 
-        # ── Log to DB ────────────────────────────────────────────
-        log_email(sprint, client_email, status=email_status)
+        # ── Log to DB — log once per sprint with all recipients ──
+        log_email(sprint, ", ".join(client_emails), status=email_status)
 
         # ── Slack notification ───────────────────────────────────
         if email_status == "sent":
-            send_sprint_notification(project, sprint_name, client_email, sprint)
+            send_sprint_notification(project, sprint_name, ", ".join(client_emails), sprint)
 
         print(f"  [DONE] {project} / {sprint_name}")
 

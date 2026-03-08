@@ -1,15 +1,28 @@
 import smtplib
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from config import EMAIL_SENDER, EMAIL_PASSWORD
 
 
 def send_email(to_email, subject, body):
+    """
+    Sends an HTML email. to_email can be a single address (str)
+    or a list of addresses (list).
+    """
 
-    msg = MIMEText(body)
+    # Handle both single email string and list of emails
+    if isinstance(to_email, list):
+        recipients = to_email
+    else:
+        recipients = [to_email]
 
+    msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = EMAIL_SENDER
-    msg["To"] = to_email
+    msg["From"]    = EMAIL_SENDER
+    msg["To"]      = ", ".join(recipients)
+
+    # HTML body from summary_service
+    msg.attach(MIMEText(body, "html"))
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
 
@@ -17,6 +30,6 @@ def send_email(to_email, subject, body):
 
         server.sendmail(
             EMAIL_SENDER,
-            to_email,
+            recipients,        # pass list — sends to all recipients
             msg.as_string()
         )
