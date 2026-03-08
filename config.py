@@ -14,3 +14,5 @@ EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 # Slack Config
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
