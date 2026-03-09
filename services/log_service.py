@@ -10,9 +10,16 @@ def get_connection():
 
 def init_db():
     """
-    Creates the email_logs table in PostgreSQL if it doesn't exist.
+    Creates two tables in PostgreSQL if they don't exist.
 
-    Schema:
+    TABLE 1 — clients
+    ┌─────────────────┬──────────────────────────────────────────────────────┐
+    │ id              │ Auto-increment primary key                           │
+    │ project_name    │ Jira board name (must match exactly)                 │
+    │ client_email    │ Client email address                                 │
+    └─────────────────┴──────────────────────────────────────────────────────┘
+
+    TABLE 2 — email_logs
     ┌─────────────────┬──────────────────────────────────────────────────────┐
     │ id              │ Auto-increment primary key                           │
     │ sent_at         │ Timestamp when the email was sent (UTC)              │
@@ -28,6 +35,16 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
+    # TABLE 1 — clients (replaces clients.json)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS clients (
+            id              SERIAL PRIMARY KEY,
+            project_name    TEXT NOT NULL,
+            client_email    TEXT NOT NULL
+        )
+    """)
+
+    # TABLE 2 — email logs
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS email_logs (
             id              SERIAL PRIMARY KEY,
@@ -47,6 +64,48 @@ def init_db():
     conn.close()
 
 
+# -----------------------------
+# GET CLIENTS FROM DB
+# -----------------------------
+def get_clients():
+    """
+    Reads all project → email mappings from the clients table.
+    Returns a dict like:
+    {
+        "INVStudio-StrongPosition": ["email1@gmail.com", "email2@gmail.com"],
+        "Steward Project":          ["client2@gmail.com"]
+    }
+    This replaces clients.json entirely.
+    """
+    init_db()
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT project_name, client_email
+        FROM clients
+        ORDER BY project_name
+    """)
+
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # Build dict — group emails by project_name
+    clients = {}
+    for project_name, client_email in rows:
+        if project_name not in clients:
+            clients[project_name] = []
+        clients[project_name].append(client_email)
+
+    print(f"  [DB] Loaded {len(clients)} project(s) from clients table")
+    return clients
+
+
+# -----------------------------
+# LOG EMAIL
+# -----------------------------
 def log_email(sprint, client_email, status="sent"):
     """
     Logs a sent (or failed) NPS email to PostgreSQL.
@@ -74,7 +133,7 @@ def log_email(sprint, client_email, status="sent"):
         sprint.get("sprint_end_date"),
         client_email,
         status,
-        json.dumps(sprint)      # stored as JSONB — fully queryable in PgAdmin
+        json.dumps(sprint)
     ))
 
     conn.commit()
@@ -84,6 +143,9 @@ def log_email(sprint, client_email, status="sent"):
     print(f"  [DB] Logged → {client_email} | {sprint.get('sprint_name')} | status={status}")
 
 
+# -----------------------------
+# DUPLICATE GUARD
+# -----------------------------
 def already_sent_today(sprint_id):
     """
     Returns True if we already sent an email for this sprint_id today.
@@ -109,6 +171,9 @@ def already_sent_today(sprint_id):
     return count > 0
 
 
+# -----------------------------
+# GET ALL LOGS
+# -----------------------------
 def get_all_logs():
     """Returns all rows from email_logs as a list of dicts."""
     init_db()

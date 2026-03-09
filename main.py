@@ -4,20 +4,15 @@ from services.jira_service import get_sprints_ending_today
 from services.summary_service import generate_summary
 from services.email_service import send_email
 from services.slack_service import send_sprint_notification
-from services.log_service import log_email, already_sent_today
-
-
-def load_clients():
-
-    with open("data/clients.json") as f:
-        return json.load(f)
+from services.log_service import log_email, already_sent_today, get_clients
 
 
 def run():
 
     print("Checking for sprint completion...")
 
-    clients = load_clients()
+    # ── Load clients from Supabase DB (replaces clients.json) ───
+    clients = get_clients()
 
     sprints = get_sprints_ending_today()
 
@@ -69,7 +64,7 @@ def run():
             email_status = "failed"
             print(f"  [EMAIL] Failed → {e}")
 
-        # ── Log to DB — log once per sprint with all recipients ──
+        # ── Log to DB ────────────────────────────────────────────
         log_email(sprint, ", ".join(client_emails), status=email_status)
 
         # ── Slack notification ───────────────────────────────────
