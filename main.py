@@ -54,7 +54,7 @@ def run():
         try:
             send_email(
                 client_emails,
-                f"Sprint Completed - {sprint_name}",
+                "BOS: Sprint completed. Request for NPS Feedback – Quick Survey",  # ← changed
                 summary
             )
             email_status = "sent"
