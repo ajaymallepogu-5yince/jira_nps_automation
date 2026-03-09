@@ -8,7 +8,7 @@ NPS_FORM_URL = "https://docs.google.com/forms/d/1x-YbiK31FU5w_0rWmP4BtWnXX5cG-A8
 def generate_summary(sprint):
     """
     Generates the HTML email body using the official BOS Framework
-    NPS email template with sprint details before the survey button.
+    NPS ail template with sprint details before the survey button.
     """
 
     project_name = sprint.get("project_name", "N/A")
