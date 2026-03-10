@@ -57,7 +57,7 @@ def generate_summary(sprint):
                     <img src="cid:bos_logo" alt="BOS" width="130" style="display:block;" />
                   </td>
                   <td style="padding-left:20px;vertical-align:middle;border-left:2px solid #e0e0e0;">
-                    <div style="font-size:18px;font-weight:bold;
+                    <div style="font-size:28px;font-weight:bold;
                                 color:{BRAND_COLOR};letter-spacing:1px;line-height:1.3;">
                       {project_name}
                     </div>
@@ -86,7 +86,7 @@ def generate_summary(sprint):
             <td style="padding:32px 36px 8px;">
 
               <p style="margin:0 0 10px;font-size:15px;color:#222222;line-height:1.85;">
-                Dear Valued Client,
+                Dear Team {project_name},
               </p>
               <p style="margin:0 0 10px;font-size:15px;color:#333333;line-height:1.85;">
                 I hope you are doing well.
@@ -216,7 +216,7 @@ def generate_summary(sprint):
               </p>
               <p style="margin:0 0 6px;font-size:15px;color:#333333;">Best regards,</p>
               <p style="margin:0 0 32px;font-size:15px;color:{BRAND_COLOR};font-weight:bold;">
-                BOS Framework Team
+                BOS Team
               </p>
               <p style="margin:0 0 28px;font-size:11px;color:#aaaaaa;line-height:1.7;">
                 This is an automated notification from the BOS Framework
