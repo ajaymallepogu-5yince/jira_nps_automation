@@ -206,6 +206,12 @@ def get_metrics():
             # Subtasks are always excluded from all counts
             SUBTASK_TYPES = {"subtask", "sub-task", "subtasks", "sub task"}
 
+            # Statuses that count as completed in your Jira
+            COMPLETED_STATUSES = {
+                "done", "closed", "resolved",
+                "ready for production", "pass", "complete", "completed"
+            }
+
             for issue in issues:
                 fields     = issue["fields"]
                 status     = fields["status"]["name"].lower()
@@ -229,17 +235,23 @@ def get_metrics():
                 elif issue_type == "task":
                     tasks += 1
                 else:
-                    # Unrecognised type — log it so we can catch mismatches
-                    print(f"    [SKIP TYPE] '{fields['issuetype']['name']}' — not counted")
-                    continue
+                    continue  # not a counted type — also excluded from completed
 
-                # Completed = "done" OR "closed"
-                if status in ("done", "closed"):
+                # Completed ONLY counted for the 4 bucket types above
+                # This ensures completed <= total always
+                if status in COMPLETED_STATUSES:
                     done += 1
+
+
 
             # Total always = sum of 4 buckets — guaranteed to match
             total = user_stories + enhancements + fixes + tasks
-            print(f"    User Stories: {user_stories} | Enhancements: {enhancements} | Fixes: {fixes} | Tasks: {tasks} | Total: {total} | Completed: {done}")
+
+            # Sanity check — completed can never exceed total
+            if done > total:
+                print(f"  [WARN] completed({done}) > total({total}) — capping at total")
+                done = total
+            print(f"  → Total: {total} | Completed: {done} | Stories: {user_stories} | Enhancements: {enhancements} | Fixes: {fixes} | Tasks: {tasks}")
             bugs  = fixes   # bugs_fixed = fixes (both = Bug type)
 
             # Space name = projectName (clean, no key suffix like "(STF)")
