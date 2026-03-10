@@ -229,7 +229,8 @@ def get_metrics():
                 elif issue_type == "task":
                     tasks += 1
                 else:
-                    # Unrecognised type — skip from all counts
+                    # Unrecognised type — log it so we can catch mismatches
+                    print(f"    [SKIP TYPE] '{fields['issuetype']['name']}' — not counted")
                     continue
 
                 # Completed = "done" OR "closed"
@@ -238,6 +239,7 @@ def get_metrics():
 
             # Total always = sum of 4 buckets — guaranteed to match
             total = user_stories + enhancements + fixes + tasks
+            print(f"    User Stories: {user_stories} | Enhancements: {enhancements} | Fixes: {fixes} | Tasks: {tasks} | Total: {total} | Completed: {done}")
             bugs  = fixes   # bugs_fixed = fixes (both = Bug type)
 
             # Space name = projectName (clean, no key suffix like "(STF)")

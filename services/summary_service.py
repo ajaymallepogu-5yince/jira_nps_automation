@@ -25,6 +25,7 @@ def generate_summary(sprint):
     user_stories = sprint.get("user_stories",       0)
     enhancements = sprint.get("enhancements",       0)
     fixes        = sprint.get("fixes",              0)
+    tasks        = sprint.get("tasks",              0)
     completion   = round((completed / total) * 100) if total > 0 else 0
 
     start_date = _fmt_date(start_raw)
@@ -167,9 +168,17 @@ def generate_summary(sprint):
                 </tr>
 
                 <tr style="background:#fafafa;">
-                  <td style="padding:13px 16px;font-size:14px;color:#444444;">Fixes</td>
+                  <td style="padding:13px 16px;font-size:14px;color:#444444;
+                              border-bottom:1px solid #eeeeee;">Fixes</td>
                   <td style="padding:13px 16px;font-size:17px;font-weight:bold;
-                              color:{BRAND_COLOR};text-align:right;">{fixes}</td>
+                              color:{BRAND_COLOR};text-align:right;
+                              border-bottom:1px solid #eeeeee;">{fixes}</td>
+                </tr>
+
+                <tr>
+                  <td style="padding:13px 16px;font-size:14px;color:#444444;">Tasks</td>
+                  <td style="padding:13px 16px;font-size:17px;font-weight:bold;
+                              color:{BRAND_COLOR};text-align:right;">{tasks}</td>
                 </tr>
 
               </table>
