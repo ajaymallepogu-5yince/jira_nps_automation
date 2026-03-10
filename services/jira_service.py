@@ -9,64 +9,101 @@ headers = {
     "Accept": "application/json"
 }
 
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 # CONTROLS
 #
-# TEST_MODE = True  → also picks up sprints that ended in
-#                     the last TEST_DAYS_BACK days so you
-#                     can test with REAL Jira data
-# TEST_MODE = False → only today's sprints (PRODUCTION)
+#   TEST_MODE = True
+#   ├── Looks AHEAD by TEST_DAYS_AHEAD days to find sprints ending soon
+#   ├── Also includes active sprints ending today
+#   ├── USE_FAKE_AS_FALLBACK = True → falls back to fake sprint if nothing found
+#   └── Useful for: previewing upcoming sprint emails before they fire
 #
-# MAX_SPRINTS       → max sprints to process per run
+#   TEST_MODE = False  ← PRODUCTION
+#   ├── Only processes sprints ending EXACTLY today
+#   ├── No look-back, no look-ahead, no fake data
+#   └── USE_FAKE_AS_FALLBACK is ignored entirely
 #
-# USE_FAKE_AS_FALLBACK → if no real sprint found at all,
-#                        use fake data below
+#   MAX_SPRINTS → cap how many sprints are processed per run
 #
-# ── TO GO LIVE ───────────────────────────────────────────
-# Set TEST_MODE            = False
-# Set USE_FAKE_AS_FALLBACK = False
-# ─────────────────────────────────────────────────────────
+# ── TO GO LIVE ────────────────────────────────────────────────────────────────
+#   TEST_MODE            = False
+#   USE_FAKE_AS_FALLBACK = False   (already ignored, but good to be explicit)
+# ─────────────────────────────────────────────────────────────────────────────
+
 TEST_MODE            = True
-TEST_DAYS_BACK       = 5
+TEST_DAYS_AHEAD      = 5        # look this many days forward in TEST_MODE
 MAX_SPRINTS          = 2
 USE_FAKE_AS_FALLBACK = True
 
 FAKE_SPRINT = {
-    # ── original fields ──────────────────────────────────
-    "project_name":     "INVStudio-StrongPosition",
-    "sprint_name":      "INS - Sprint 12",
-    "sprint_id":        99999,
-    "sprint_end_date":  datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-    "ends_today":       True,
-    "total_issues":     18,
-    "completed_issues": 12,
-    "bugs_fixed":       3,
-    "story_points":     34,
-    # ── new fields ───────────────────────────────────────
+    "project_name":      "INVStudio-StrongPosition",
+    "sprint_name":       "INS - Sprint 12",
+    "sprint_id":         99999,
+    "sprint_end_date":   datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+    "ends_today":        True,
+    "total_issues":      18,
+    "completed_issues":  12,
+    "bugs_fixed":        3,
+    "story_points":      34,
     "sprint_start_date": "2026-02-23T09:00:00.000Z",
     "user_stories":      6,
     "enhancements":      3,
     "fixes":             3,
 }
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 
 
-# -----------------------------
-# GET ALL BOARDS (PAGINATION)
-# ── UNCHANGED ────────────────
-# -----------------------------
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPER — parse a Jira endDate string → local date
+# ─────────────────────────────────────────────────────────────────────────────
+def _parse_end_date(sprint):
+    end_date_str = sprint.get("endDate")
+    if not end_date_str:
+        return None
+    try:
+        end_dt = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
+        return end_dt.astimezone().date()
+    except Exception as e:
+        print(f"  [WARN] Could not parse sprint endDate '{end_date_str}': {e}")
+        return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHECK IF SPRINT ENDS TODAY  (used in both modes)
+# ─────────────────────────────────────────────────────────────────────────────
+def sprint_ends_today(sprint):
+    end_date_local = _parse_end_date(sprint)
+    if end_date_local is None:
+        return False
+    return end_date_local == datetime.now().date()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHECK IF SPRINT ENDS WITHIN THE NEXT N DAYS  (TEST_MODE only)
+# Includes today so today's sprints are never missed
+# ─────────────────────────────────────────────────────────────────────────────
+def sprint_ends_within_days_ahead(sprint):
+    end_date_local = _parse_end_date(sprint)
+    if end_date_local is None:
+        return False
+    today   = datetime.now().date()
+    cutoff  = today + timedelta(days=TEST_DAYS_AHEAD)
+    return today <= end_date_local <= cutoff
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET ALL BOARDS  (pagination)
+# ─────────────────────────────────────────────────────────────────────────────
 def get_all_boards():
-
-    boards = []
-    start_at = 0
+    boards     = []
+    start_at   = 0
     max_results = 50
 
     while True:
-
-        url = f"{JIRA_BASE_URL}/rest/agile/1.0/board?startAt={start_at}&maxResults={max_results}"
+        url      = f"{JIRA_BASE_URL}/rest/agile/1.0/board?startAt={start_at}&maxResults={max_results}"
         response = requests.get(url, headers=headers, auth=auth)
-        data = response.json()
-        values = data.get("values", [])
+        data     = response.json()
+        values   = data.get("values", [])
         boards.extend(values)
 
         if data.get("isLast", True):
@@ -78,46 +115,28 @@ def get_all_boards():
     return boards
 
 
-# -----------------------------
-# GET ACTIVE SPRINTS
-# ── UNCHANGED ────────────────
-# -----------------------------
+# ─────────────────────────────────────────────────────────────────────────────
+# GET ACTIVE SPRINTS for a board
+# ─────────────────────────────────────────────────────────────────────────────
 def get_active_sprints(board_id):
-
-    url = f"{JIRA_BASE_URL}/rest/agile/1.0/board/{board_id}/sprint?state=active"
+    url      = f"{JIRA_BASE_URL}/rest/agile/1.0/board/{board_id}/sprint?state=active"
     response = requests.get(url, headers=headers, auth=auth)
-    data = response.json()
-    return data.get("values", [])
+    return response.json().get("values", [])
 
 
-# ─────────────────────────────────────────────────────────
-# GET CLOSED SPRINTS — NEW
-# Only called in TEST_MODE to find recently ended sprints
-# ─────────────────────────────────────────────────────────
-def get_closed_sprints(board_id):
-
-    url = f"{JIRA_BASE_URL}/rest/agile/1.0/board/{board_id}/sprint?state=closed"
-    response = requests.get(url, headers=headers, auth=auth)
-    data = response.json()
-    return data.get("values", [])
-
-
-# -----------------------------
-# GET SPRINT ISSUES
-# ── UNCHANGED ────────────────
-# -----------------------------
+# ─────────────────────────────────────────────────────────────────────────────
+# GET SPRINT ISSUES  (pagination)
+# ─────────────────────────────────────────────────────────────────────────────
 def get_sprint_issues(sprint_id):
-
-    issues = []
-    start_at = 0
+    issues     = []
+    start_at   = 0
     max_results = 50
 
     while True:
-
-        url = f"{JIRA_BASE_URL}/rest/agile/1.0/sprint/{sprint_id}/issue?startAt={start_at}&maxResults={max_results}"
+        url      = f"{JIRA_BASE_URL}/rest/agile/1.0/sprint/{sprint_id}/issue?startAt={start_at}&maxResults={max_results}"
         response = requests.get(url, headers=headers, auth=auth)
-        data = response.json()
-        batch = data.get("issues", [])
+        data     = response.json()
+        batch    = data.get("issues", [])
         issues.extend(batch)
 
         if start_at + max_results >= data.get("total", 0):
@@ -128,109 +147,66 @@ def get_sprint_issues(sprint_id):
     return issues
 
 
-# -----------------------------
-# CHECK IF SPRINT ENDS TODAY
-# ── UNCHANGED ────────────────
-# -----------------------------
-def sprint_ends_today(sprint):
-
-    end_date_str = sprint.get("endDate")
-
-    if not end_date_str:
-        return False
-
-    try:
-        end_date_str_clean = end_date_str.replace("Z", "+00:00")
-        end_dt = datetime.fromisoformat(end_date_str_clean)
-        end_date_local = end_dt.astimezone().date()
-        today = datetime.now().date()
-        return end_date_local == today
-
-    except Exception as e:
-        print(f"  [WARN] Could not parse sprint endDate '{end_date_str}': {e}")
-        return False
-
-
-# ─────────────────────────────────────────────────────────
-# CHECK IF SPRINT ENDED RECENTLY — NEW
-# Used only in TEST_MODE
-# ─────────────────────────────────────────────────────────
-def sprint_ended_recently(sprint):
-
-    end_date_str = sprint.get("endDate")
-
-    if not end_date_str:
-        return False
-
-    try:
-        end_date_str_clean = end_date_str.replace("Z", "+00:00")
-        end_dt             = datetime.fromisoformat(end_date_str_clean)
-        end_date_local     = end_dt.astimezone().date()
-        today              = datetime.now().date()
-        earliest           = today - timedelta(days=TEST_DAYS_BACK)
-        return earliest <= end_date_local <= today
-
-    except Exception as e:
-        print(f"  [WARN] Could not parse sprint endDate '{end_date_str}': {e}")
-        return False
-
-
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 # MAIN METRICS FUNCTION
-# ── All original fields kept
-# ── New fields added on top
-# ─────────────────────────────────────────────────────────
+#
+#   PRODUCTION (TEST_MODE = False):
+#     → Only fetches ACTIVE sprints
+#     → Only includes sprints ending exactly today
+#
+#   TEST MODE (TEST_MODE = True):
+#     → Fetches ACTIVE sprints
+#     → Includes sprints ending today OR within the next TEST_DAYS_AHEAD days
+#     → Does NOT look back at closed/past sprints
+# ─────────────────────────────────────────────────────────────────────────────
 def get_metrics():
-
     results = []
     boards  = get_all_boards()
 
     for board in boards:
-
         board_id   = board["id"]
         board_name = board["name"]
 
         print(f"\nChecking board: {board_name}")
 
-        # In TEST_MODE: active + closed sprints
-        # In production: only active (original behavior)
+        # Always only look at ACTIVE sprints — no closed sprint lookback
         sprints = get_active_sprints(board_id)
-        if TEST_MODE:
-            sprints = sprints + get_closed_sprints(board_id)
 
         if not sprints:
             print("  No active sprint")
             continue
 
         for sprint in sprints:
-
             sprint_id   = sprint["id"]
             sprint_name = sprint["name"]
             sprint_end  = sprint.get("endDate", "N/A")
 
-            # In TEST_MODE: skip sprints that didn't end recently
-            if TEST_MODE and not sprint_ended_recently(sprint):
+            # ── PRODUCTION: must end today ────────────────────────────────────
+            if not TEST_MODE and not sprint_ends_today(sprint):
+                print(f"  [SKIP] {sprint_name} | Ends: {sprint_end} — not today")
                 continue
 
-            print(f"  Active sprint: {sprint_name} | Ends: {sprint_end}")
+            # ── TEST MODE: must end today OR within next TEST_DAYS_AHEAD days ─
+            if TEST_MODE and not sprint_ends_within_days_ahead(sprint):
+                print(f"  [SKIP] {sprint_name} | Ends: {sprint_end} — outside {TEST_DAYS_AHEAD}-day window")
+                continue
 
-            issues = get_sprint_issues(sprint_id)
+            print(f"  {'[TEST] ' if TEST_MODE else ''}Sprint: {sprint_name} | Ends: {sprint_end}")
 
+            issues       = get_sprint_issues(sprint_id)
             total        = len(issues)
             done         = 0
             bugs         = 0
             story_points = 0
-            user_stories = 0   # ← new
-            enhancements = 0   # ← new
-            fixes        = 0   # ← new
+            user_stories = 0
+            enhancements = 0
+            fixes        = 0
 
             for issue in issues:
-
                 fields     = issue["fields"]
                 status     = fields["status"]["name"].lower()
                 issue_type = fields["issuetype"]["name"].lower()
 
-                # ── Original fields ──────────────────────────────
                 sp = fields.get("customfield_10016")
                 if sp:
                     story_points += sp
@@ -241,7 +217,6 @@ def get_metrics():
                 if issue_type == "bug":
                     bugs += 1
 
-                # ── New fields ───────────────────────────────────
                 if issue_type in ("story", "user story", "feature"):
                     user_stories += 1
 
@@ -252,24 +227,21 @@ def get_metrics():
                     fixes += 1
 
             results.append({
-                # ── All original fields ──────────────────────────
-                "project_name":     board_name,
-                "sprint_name":      sprint_name,
-                "sprint_id":        sprint_id,
-                "sprint_end_date":  sprint_end,
-                "ends_today":       sprint_ends_today(sprint),
-                "total_issues":     total,
-                "completed_issues": done,
-                "bugs_fixed":       bugs,
-                "story_points":     story_points,
-                # ── New fields ───────────────────────────────────
+                "project_name":      board_name,
+                "sprint_name":       sprint_name,
+                "sprint_id":         sprint_id,
+                "sprint_end_date":   sprint_end,
+                "ends_today":        sprint_ends_today(sprint),
+                "total_issues":      total,
+                "completed_issues":  done,
+                "bugs_fixed":        bugs,
+                "story_points":      story_points,
                 "sprint_start_date": sprint.get("startDate", "N/A"),
                 "user_stories":      user_stories,
                 "enhancements":      enhancements,
                 "fixes":             fixes,
             })
 
-            # Stop once we hit the MAX_SPRINTS limit
             if len(results) >= MAX_SPRINTS:
                 print(f"\n  [LIMIT] Reached MAX_SPRINTS={MAX_SPRINTS}, stopping.")
                 return results
@@ -277,41 +249,47 @@ def get_metrics():
     return results
 
 
-# -----------------------------
-# GET ONLY SPRINTS ENDING TODAY
-# ── UNCHANGED ────────────────
-# -----------------------------
+# ─────────────────────────────────────────────────────────────────────────────
+# GET SPRINTS TO PROCESS
+#
+#   PRODUCTION (TEST_MODE = False):
+#     → Returns only sprints ending today
+#     → Returns [] if none found — NO fake fallback
+#
+#   TEST MODE (TEST_MODE = True):
+#     → Returns sprints ending today OR within next TEST_DAYS_AHEAD days
+#     → Falls back to FAKE_SPRINT only if USE_FAKE_AS_FALLBACK = True
+#       and no real sprints were found at all
+# ─────────────────────────────────────────────────────────────────────────────
 def get_sprints_ending_today():
-
     all_metrics  = get_metrics()
     ending_today = [m for m in all_metrics if m.get("ends_today")]
 
     print(f"\nSprints ending today: {len(ending_today)}")
 
-    # Real sprint found → use it, fake is ignored
+    # Sprints ending exactly today — always return these first
     if ending_today:
         return ending_today
 
-    # In TEST_MODE — return recently ended real sprints too
+    # TEST MODE only: also include sprints ending within next N days
     if TEST_MODE and all_metrics:
-        print(f"  [TEST] No sprint ending today — returning {len(all_metrics)} recent sprint(s)")
+        print(f"  [TEST] No sprint ending today — returning {len(all_metrics)} sprint(s) ending within {TEST_DAYS_AHEAD} days")
         return all_metrics
 
-    # No real sprint today → fall back to fake if enabled
-    if USE_FAKE_AS_FALLBACK:
-        print("  No real sprint ending today — using FAKE sprint for testing")
+    # TEST MODE only: fake fallback if nothing found at all
+    if TEST_MODE and USE_FAKE_AS_FALLBACK:
+        print("  [TEST] No real sprint found — using FAKE sprint for testing")
         return [FAKE_SPRINT]
 
+    # PRODUCTION: nothing ending today → do nothing
+    print("  No sprint ending today — nothing to send")
     return []
 
 
-# -----------------------------
-# RUN SCRIPT
-# ── UNCHANGED ────────────────
-# -----------------------------
+# ─────────────────────────────────────────────────────────────────────────────
+# RUN
+# ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-
     data = get_sprints_ending_today()
-
     print("\nFINAL RESULT:\n")
     print(data)

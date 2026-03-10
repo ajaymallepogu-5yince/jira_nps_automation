@@ -1,4 +1,6 @@
 .env
 venv
+img.py
+debug_jira.py
 __pycache__
 database/*.db
