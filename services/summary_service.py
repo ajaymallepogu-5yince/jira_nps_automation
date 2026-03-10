@@ -142,12 +142,10 @@ def generate_summary(sprint):
                 <tr>
                   <td style="padding:13px 16px;font-size:14px;color:#444444;
                               border-bottom:1px solid #eeeeee;">Completed Items</td>
-                  <td style="padding:13px 16px;font-size:17px;font-weight:bold;
-                              color:{BRAND_COLOR};text-align:right;
+                  <td style="padding:13px 16px;text-align:right;
                               border-bottom:1px solid #eeeeee;">
-                    {completed}
-                    <span style="font-size:12px;color:#999999;
-                                 font-weight:normal;">&nbsp;({completion}%)</span>
+                    <div style="font-size:17px;font-weight:bold;color:{BRAND_COLOR};line-height:1.2;">{completed}</div>
+                    <div style="font-size:12px;color:#999999;font-weight:normal;line-height:1.2;">({completion}%)</div>
                   </td>
                 </tr>
 
@@ -200,13 +198,21 @@ def generate_summary(sprint):
                       The survey will only take a minute, and your feedback
                       is highly valuable to our team.
                     </p>
-                    <a href="{NPS_FORM_URL}"
-                       style="display:inline-block;background:{BRAND_COLOR};
-                              color:#ffffff;text-decoration:none;
-                              padding:14px 32px;font-size:11px;
-                              letter-spacing:3px;text-transform:uppercase;">
-                      Take the Survey &rarr;
-                    </a>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center" bgcolor="{BRAND_COLOR}"
+                            style="border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.22);">
+                          <a href="{NPS_FORM_URL}"
+                             style="display:inline-block;padding:16px 40px;
+                                    font-size:14px;font-weight:bold;color:#ffffff;
+                                    text-decoration:none;letter-spacing:2px;
+                                    text-transform:uppercase;border-radius:8px;
+                                    font-family:Arial,sans-serif;">
+                            Take the Survey &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
