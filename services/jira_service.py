@@ -49,6 +49,7 @@ FAKE_SPRINT = {
     "user_stories":      6,
     "enhancements":      3,
     "fixes":             3,
+    "tasks":             3,
 }
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -166,8 +167,9 @@ def get_metrics():
     for board in boards:
         board_id   = board["id"]
         board_name = board["name"]
+        location   = board.get("location", {})
 
-        print(f"\nChecking board: {board_name}")
+        print(f"\nChecking board: {board_name} → space: {location.get('projectName') or board_name}")
 
         # Always only look at ACTIVE sprints — no closed sprint lookback
         sprints = get_active_sprints(board_id)
@@ -194,40 +196,59 @@ def get_metrics():
             print(f"  {'[TEST] ' if TEST_MODE else ''}Sprint: {sprint_name} | Ends: {sprint_end}")
 
             issues       = get_sprint_issues(sprint_id)
-            total        = len(issues)
             done         = 0
-            bugs         = 0
             story_points = 0
-            user_stories = 0
-            enhancements = 0
-            fixes        = 0
+            user_stories = 0   # Jira type: Story, User Story
+            enhancements = 0   # Jira type: Improvement, Change
+            fixes        = 0   # Jira type: Bug
+            tasks        = 0   # Jira type: Task
+
+            # Subtasks are always excluded from all counts
+            SUBTASK_TYPES = {"subtask", "sub-task", "subtasks", "sub task"}
 
             for issue in issues:
                 fields     = issue["fields"]
                 status     = fields["status"]["name"].lower()
                 issue_type = fields["issuetype"]["name"].lower()
 
+                # ── Skip subtasks entirely ───────────────────────────────────
+                if issue_type in SUBTASK_TYPES:
+                    continue
+
                 sp = fields.get("customfield_10016")
                 if sp:
                     story_points += sp
 
-                if "done" in status:
+                # ── Bucket by type (only 4 recognised types count) ───────────
+                if issue_type in ("story", "user story"):
+                    user_stories += 1
+                elif issue_type in ("improvement", "change"):
+                    enhancements += 1
+                elif issue_type == "bug":
+                    fixes += 1
+                elif issue_type == "task":
+                    tasks += 1
+                else:
+                    # Unrecognised type — skip from all counts
+                    continue
+
+                # Completed = "done" OR "closed"
+                if status in ("done", "closed"):
                     done += 1
 
-                if issue_type == "bug":
-                    bugs += 1
+            # Total always = sum of 4 buckets — guaranteed to match
+            total = user_stories + enhancements + fixes + tasks
+            bugs  = fixes   # bugs_fixed = fixes (both = Bug type)
 
-                if issue_type in ("story", "user story", "feature"):
-                    user_stories += 1
-
-                if issue_type in ("improvement", "change"):
-                    enhancements += 1
-
-                if issue_type == "bug":
-                    fixes += 1
+            # Space name = projectName (clean, no key suffix like "(STF)")
+            # Falls back to board name if location not available
+            space_name = (
+                location.get("projectName")
+                or board_name
+            )
 
             results.append({
-                "project_name":      board_name,
+                "project_name":      space_name,
                 "sprint_name":       sprint_name,
                 "sprint_id":         sprint_id,
                 "sprint_end_date":   sprint_end,
@@ -240,6 +261,7 @@ def get_metrics():
                 "user_stories":      user_stories,
                 "enhancements":      enhancements,
                 "fixes":             fixes,
+                "tasks":             tasks,
             })
 
             if len(results) >= MAX_SPRINTS:
