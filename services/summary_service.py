@@ -25,6 +25,7 @@ def generate_summary(sprint):
     user_stories = sprint.get("user_stories",       0)
     enhancements = sprint.get("enhancements",       0)
     fixes        = sprint.get("fixes",              0)
+    tasks        = sprint.get("tasks",              0)
     completion   = round((completed / total) * 100) if total > 0 else 0
 
     start_date = _fmt_date(start_raw)
@@ -85,7 +86,7 @@ def generate_summary(sprint):
             <td style="padding:32px 36px 8px;">
 
               <p style="margin:0 0 10px;font-size:15px;color:#222222;line-height:1.85;">
-                Dear Valued Client,
+                Dear Team {project_name},
               </p>
               <p style="margin:0 0 10px;font-size:15px;color:#333333;line-height:1.85;">
                 I hope you are doing well.
@@ -167,9 +168,17 @@ def generate_summary(sprint):
                 </tr>
 
                 <tr style="background:#fafafa;">
-                  <td style="padding:13px 16px;font-size:14px;color:#444444;">Fixes</td>
+                  <td style="padding:13px 16px;font-size:14px;color:#444444;
+                              border-bottom:1px solid #eeeeee;">Fixes</td>
                   <td style="padding:13px 16px;font-size:17px;font-weight:bold;
-                              color:{BRAND_COLOR};text-align:right;">{fixes}</td>
+                              color:{BRAND_COLOR};text-align:right;
+                              border-bottom:1px solid #eeeeee;">{fixes}</td>
+                </tr>
+
+                <tr>
+                  <td style="padding:13px 16px;font-size:14px;color:#444444;">Tasks</td>
+                  <td style="padding:13px 16px;font-size:17px;font-weight:bold;
+                              color:{BRAND_COLOR};text-align:right;">{tasks}</td>
                 </tr>
 
               </table>
@@ -207,7 +216,7 @@ def generate_summary(sprint):
               </p>
               <p style="margin:0 0 6px;font-size:15px;color:#333333;">Best regards,</p>
               <p style="margin:0 0 32px;font-size:15px;color:{BRAND_COLOR};font-weight:bold;">
-                BOS Framework Team
+                BOS Team
               </p>
               <p style="margin:0 0 28px;font-size:11px;color:#aaaaaa;line-height:1.7;">
                 This is an automated notification from the BOS Framework
