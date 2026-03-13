@@ -54,7 +54,7 @@ def generate_summary(sprint):
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="vertical-align:middle;width:150px;">
-                    <img src="https://www.bosframework.com/images/LogoBOS.png" alt="BOS" width="130" style="display:block;" />
+                    <img src="https://www.bosframework.com/images/LogoBOS.png" alt="BOS" width="140" style="display:block;" />
                   </td>
                   <td style="padding-left:20px;vertical-align:middle;border-left:2px solid #e0e0e0;">
                     <div style="font-size:28px;font-weight:bold;
