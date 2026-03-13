@@ -53,8 +53,8 @@ def generate_summary(sprint):
             <td style="padding:24px 36px 20px;border-bottom:2px solid {BRAND_COLOR};">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="vertical-align:middle;width:auto;">
-                    <img src="{BOS_LOGO_URL}" alt="BOS" height="36" style="display:block;width:auto;" />
+                  <td style="vertical-align:middle;width:140px;">
+                    <img src="{BOS_LOGO_URL}" alt="BOS" style="display:block;width:130;" />
                   </td>
                   <td style="padding-left:20px;vertical-align:middle;border-left:2px solid #e0e0e0;">
                     <div style="font-size:28px;font-weight:bold;
