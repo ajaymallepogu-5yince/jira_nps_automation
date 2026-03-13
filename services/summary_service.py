@@ -200,13 +200,21 @@ def generate_summary(sprint):
                       The survey will only take a minute, and your feedback
                       is highly valuable to our team.
                     </p>
-                    <a href="{NPS_FORM_URL}"
-                       style="display:inline-block;background:{BRAND_COLOR};
-                              color:#ffffff;text-decoration:none;
-                              padding:14px 32px;font-size:11px;
-                              letter-spacing:3px;text-transform:uppercase;">
-                      Take the Survey &rarr;
-                    </a>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center" bgcolor="{BRAND_COLOR}"
+                            style="border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.22);">
+                          <a href="{NPS_FORM_URL}"
+                             style="display:inline-block;padding:16px 40px;
+                                    font-size:14px;font-weight:bold;color:#ffffff;
+                                    text-decoration:none;letter-spacing:2px;
+                                    text-transform:uppercase;border-radius:8px;
+                                    font-family:Arial,sans-serif;">
+                            Take the Survey &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
