@@ -1,6 +1,6 @@
 from datetime import datetime
 
-BOS_LOGO_B64 = "https://www.bosframework.com/images/LogoBOS.png"
+BOS_LOGO_URL = "https://www.bosframework.com/images/LogoBOS.png"
 
 NPS_FORM_URL = "https://docs.google.com/forms/d/1x-YbiK31FU5w_0rWmP4BtWnXX5cG-A8b3WKnYOT3Sgk/viewform"
 BRAND_COLOR  = "#00224C"
@@ -53,8 +53,8 @@ def generate_summary(sprint):
             <td style="padding:24px 36px 20px;border-bottom:2px solid {BRAND_COLOR};">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="vertical-align:middle;width:140px;">
-                    <img src="https://www.bosframework.com/images/LogoBOS.png" alt="BOS" width="145" style="display:block;" />
+                  <td style="vertical-align:middle;width:auto;">
+                    <img src="{BOS_LOGO_URL}" alt="BOS" height="36" style="display:block;width:auto;" />
                   </td>
                   <td style="padding-left:20px;vertical-align:middle;border-left:2px solid #e0e0e0;">
                     <div style="font-size:28px;font-weight:bold;
@@ -207,14 +207,6 @@ def generate_summary(sprint):
                               letter-spacing:3px;text-transform:uppercase;">
                       Take the Survey &rarr;
                     </a>
-
-
-
-
-
-
-
-
                   </td>
                 </tr>
               </table>
