@@ -25,7 +25,6 @@ def generate_summary(sprint):
     user_stories = sprint.get("user_stories",       0)
     enhancements = sprint.get("enhancements",       0)
     fixes        = sprint.get("fixes",              0)
-    tasks        = sprint.get("tasks",              0)
     completion   = round((completed / total) * 100) if total > 0 else 0
 
     start_date = _fmt_date(start_raw)
@@ -57,7 +56,7 @@ def generate_summary(sprint):
                     <img src="data:image/jpeg;base64,{BOS_LOGO_B64}" alt="BOS" width="130" style="display:block;" />
                   </td>
                   <td style="padding-left:20px;vertical-align:middle;border-left:2px solid #e0e0e0;">
-                    <div style="font-size:28px;font-weight:bold;
+                    <div style="font-size:18px;font-weight:bold;
                                 color:{BRAND_COLOR};letter-spacing:1px;line-height:1.3;">
                       {project_name}
                     </div>
@@ -86,7 +85,7 @@ def generate_summary(sprint):
             <td style="padding:32px 36px 8px;">
 
               <p style="margin:0 0 10px;font-size:15px;color:#222222;line-height:1.85;">
-                Dear Team {project_name},
+                Dear Valued Client,
               </p>
               <p style="margin:0 0 10px;font-size:15px;color:#333333;line-height:1.85;">
                 I hope you are doing well.
@@ -142,10 +141,12 @@ def generate_summary(sprint):
                 <tr>
                   <td style="padding:13px 16px;font-size:14px;color:#444444;
                               border-bottom:1px solid #eeeeee;">Completed Items</td>
-                  <td style="padding:13px 16px;text-align:right;
+                  <td style="padding:13px 16px;font-size:17px;font-weight:bold;
+                              color:{BRAND_COLOR};text-align:right;
                               border-bottom:1px solid #eeeeee;">
-                    <div style="font-size:17px;font-weight:bold;color:{BRAND_COLOR};line-height:1.2;">{completed}</div>
-                    <div style="font-size:12px;color:#999999;font-weight:normal;line-height:1.2;">({completion}%)</div>
+                    {completed}
+                    <span style="font-size:12px;color:#999999;
+                                 font-weight:normal;">&nbsp;({completion}%)</span>
                   </td>
                 </tr>
 
@@ -166,17 +167,9 @@ def generate_summary(sprint):
                 </tr>
 
                 <tr style="background:#fafafa;">
-                  <td style="padding:13px 16px;font-size:14px;color:#444444;
-                              border-bottom:1px solid #eeeeee;">Fixes</td>
+                  <td style="padding:13px 16px;font-size:14px;color:#444444;">Fixes</td>
                   <td style="padding:13px 16px;font-size:17px;font-weight:bold;
-                              color:{BRAND_COLOR};text-align:right;
-                              border-bottom:1px solid #eeeeee;">{fixes}</td>
-                </tr>
-
-                <tr>
-                  <td style="padding:13px 16px;font-size:14px;color:#444444;">Tasks</td>
-                  <td style="padding:13px 16px;font-size:17px;font-weight:bold;
-                              color:{BRAND_COLOR};text-align:right;">{tasks}</td>
+                              color:{BRAND_COLOR};text-align:right;">{fixes}</td>
                 </tr>
 
               </table>
@@ -198,21 +191,13 @@ def generate_summary(sprint):
                       The survey will only take a minute, and your feedback
                       is highly valuable to our team.
                     </p>
-                    <table cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td align="center" bgcolor="{BRAND_COLOR}"
-                            style="border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.22);">
-                          <a href="{NPS_FORM_URL}"
-                             style="display:inline-block;padding:16px 40px;
-                                    font-size:14px;font-weight:bold;color:#ffffff;
-                                    text-decoration:none;letter-spacing:2px;
-                                    text-transform:uppercase;border-radius:8px;
-                                    font-family:Arial,sans-serif;">
-                            Take the Survey &rarr;
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
+                    <a href="{NPS_FORM_URL}"
+                       style="display:inline-block;background:{BRAND_COLOR};
+                              color:#ffffff;text-decoration:none;
+                              padding:14px 32px;font-size:11px;
+                              letter-spacing:3px;text-transform:uppercase;">
+                      Take the Survey &rarr;
+                    </a>
                   </td>
                 </tr>
               </table>
@@ -222,7 +207,7 @@ def generate_summary(sprint):
               </p>
               <p style="margin:0 0 6px;font-size:15px;color:#333333;">Best regards,</p>
               <p style="margin:0 0 32px;font-size:15px;color:{BRAND_COLOR};font-weight:bold;">
-                BOS Team
+                BOS Framework Team
               </p>
               <p style="margin:0 0 28px;font-size:11px;color:#aaaaaa;line-height:1.7;">
                 This is an automated notification from the BOS Framework
